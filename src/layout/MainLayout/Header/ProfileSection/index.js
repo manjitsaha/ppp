@@ -59,7 +59,6 @@ const ProfileSection = () => {
     }, [user, isLoggedIn, token]);
 
     const handleLogout = () => {
-        debugger;
         dispatch(actions.auth.logout());
     };
 

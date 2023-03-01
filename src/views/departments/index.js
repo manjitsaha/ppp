@@ -17,7 +17,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import { gridSpacing } from 'store/constant';
 import { useDispatch, useSelector } from 'store';
 import actions from 'store/actions';
-// import { saveUsers } from 'store/slices/user';
+import { openSnackbar } from 'store/slices/snackbar';
 import TableComponent from 'components/grid';
 
 // assets
@@ -64,6 +64,20 @@ const DepartmentPage = () => {
         dispatch(actions.config.getDepartments());
     };
 
+    const openNotification = (msg) => {
+        dispatch(
+            openSnackbar({
+                open: true,
+                message: msg,
+                variant: 'alert',
+                alert: {
+                    color: 'success'
+                },
+                close: false
+            })
+        );
+    };
+
     const setInitialState = () => {
         setDepartment({
             ...initiaDepartmentState
@@ -79,15 +93,19 @@ const DepartmentPage = () => {
 
     useEffect(() => {
         if (isSaved) {
+            openNotification(isNew ? 'New department record created successfully.' : 'Department record updated successfully.');
             setInitialState();
             getDepartmentList();
         }
     }, [isSaved, department]);
 
     useEffect(() => {
-        setDeleteItemId(null);
-        setDeleteModal(false);
-        getDepartmentList();
+        if (isDeleted) {
+            openNotification('Record Deleted!!!');
+            setDeleteItemId(null);
+            setDeleteModal(false);
+            getDepartmentList();
+        }
     }, [isDeleted]);
 
     const handleClickOpen = () => {

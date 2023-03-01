@@ -133,7 +133,9 @@ const TableComponent = (props) => {
                                                 )}
                                             </TableCell>
                                         ) : (
-                                            <TableCell key={`${col.name}-${ind}`}>{row[col.field]}</TableCell>
+                                            <TableCell key={`${col.name}-${ind}`}>
+                                                {col.renderer ? col.renderer(row) : row[col.field]}
+                                            </TableCell>
                                         )
                                     )}
                                 </TableRow>

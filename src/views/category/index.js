@@ -9,7 +9,8 @@ import {
     TextField,
     Typography,
     IconButton,
-    Slide
+    Slide,
+    Autocomplete
 } from '@mui/material';
 
 // project imports
@@ -17,7 +18,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import { gridSpacing } from 'store/constant';
 import { useDispatch, useSelector } from 'store';
 import actions from 'store/actions';
-// // import { saveUsers } from 'store/slices/user';
+import { openSnackbar } from 'store/slices/snackbar';
 
 // assets
 import { IconSearch } from '@tabler/icons';
@@ -28,7 +29,7 @@ import TableComponent from 'components/grid';
 const Transition = React.forwardRef((props, ref) => <Slide direction="up" ref={ref} {...props} />);
 const initialCategorytate = {
     name: '',
-    color: ''
+    color: null
 };
 
 const columns = [
@@ -42,7 +43,10 @@ const columns = [
     },
     {
         name: 'Color',
-        field: 'color'
+        field: 'color',
+        renderer(params) {
+            return <div style={{ backgroundColor: `${params.color}`, width: '50%', height: '40px', borderRadius: '5px' }} />;
+        }
     },
     {
         name: 'Action',
@@ -92,9 +96,24 @@ const CategoryPage = () => {
     const [isDeleteModal, setDeleteModal] = useState(false);
     const [deleteItemId, setDeleteItemId] = useState(null);
     const { list, isSaved, error, loading, isDeleted } = useSelector((state) => state.config.categories);
+    const colorData = useSelector((state) => state.config.color.list);
 
     const getCategoryData = () => {
         dispatch(actions.config.getcategory());
+    };
+
+    const openNotification = (msg) => {
+        dispatch(
+            openSnackbar({
+                open: true,
+                message: msg,
+                variant: 'alert',
+                alert: {
+                    color: 'success'
+                },
+                close: false
+            })
+        );
     };
 
     const setInitialState = () => {
@@ -108,19 +127,24 @@ const CategoryPage = () => {
 
     useEffect(() => {
         getCategoryData();
+        dispatch(actions.config.getColors());
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         if (isSaved) {
+            openNotification(isNew ? 'New category record created successfully.' : 'Category record updated successfully.');
             setInitialState();
             getCategoryData();
         }
     }, [isSaved, category]);
 
     useEffect(() => {
-        setDeleteItemId(null);
-        setDeleteModal(false);
-        getCategoryData();
+        if (isDeleted) {
+            openNotification('Record Deleted!!!');
+            setDeleteItemId(null);
+            setDeleteModal(false);
+            getCategoryData();
+        }
     }, [isDeleted]);
 
     const handleClickOpen = () => {
@@ -151,15 +175,20 @@ const CategoryPage = () => {
     };
 
     const handleCreate = () => {
-        console.log('category', category);
-        dispatch(actions.config.saveCategory(category, isEdit));
+        const categoryObj = {
+            ...category,
+            color: category.color.code
+        };
+        console.log('category', categoryObj);
+        dispatch(actions.config.saveCategory(categoryObj, isEdit));
     };
 
     const handleEdit = (row, index) => {
         console.log(row, index);
         setCategory({
             ...initialCategorytate,
-            ...row
+            ...row,
+            color: colorData.find((x) => x.code === row.color || x.color === row.color)
         });
         setEdit(true);
     };
@@ -181,6 +210,14 @@ const CategoryPage = () => {
             default:
                 break;
         }
+    };
+
+    const handleAutocompleteChange = (key, value) => {
+        const categoryObj = {
+            ...category,
+            [key]: value
+        };
+        setCategory(categoryObj);
     };
 
     const canDialogOpen = () => !!(isNew || isEdit);
@@ -208,7 +245,13 @@ const CategoryPage = () => {
                             <TextField fullWidth name="name" label="Name" value={category.name} onChange={handleFormChange} />
                         </Grid>
                         <Grid item xs={12}>
-                            <TextField name="color" fullWidth label="Color" value={category.color} onChange={handleFormChange} />
+                            <Autocomplete
+                                options={colorData}
+                                getOptionLabel={(opt) => `${opt.color}(${opt.code})`}
+                                value={category.color}
+                                onChange={(event, value) => handleAutocompleteChange('color', value)}
+                                renderInput={(params) => <TextField {...params} label="Color" />}
+                            />
                         </Grid>
                         <Grid item xs={12}>
                             <Grid container spacing={1} alignItems="center">

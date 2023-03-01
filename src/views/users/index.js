@@ -18,6 +18,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import { gridSpacing } from 'store/constant';
 import { useDispatch, useSelector } from 'store';
 import actions from 'store/actions';
+import { openSnackbar } from 'store/slices/snackbar';
 import TableComponent from 'components/grid';
 
 // assets
@@ -33,6 +34,15 @@ const initialUserState = {
     roles: [],
     departments: [],
     sections: []
+};
+
+const intitalFormError = {
+    first_name: '',
+    last_name: '',
+    email: '',
+    roles: '',
+    departments: '',
+    sections: ''
 };
 
 const column = [
@@ -51,6 +61,21 @@ const column = [
     {
         name: 'Email',
         field: 'email'
+    },
+    {
+        name: 'Role',
+        field: 'roles',
+        renderer: (params) => params.role.map((x) => x.role).toString()
+    },
+    {
+        name: 'Department',
+        field: 'departments',
+        renderer: (params) => params.department_section.map((x) => x.department_name).toString()
+    },
+    {
+        name: 'Section',
+        field: 'sections',
+        renderer: (params) => params.department_section.map((x) => x.section_name).toString()
     },
     {
         name: 'Action',
@@ -80,6 +105,7 @@ const UsersPage = () => {
     const [user, setUser] = useState({ ...initialUserState });
     const [isEdit, setEdit] = useState(false);
     const [isView, setView] = useState(false);
+    const [formError, setFormError] = useState({ ...intitalFormError });
     const [position, setPosition] = useState(true);
     const [isDeleteModal, setDeleteModal] = useState(false);
     const { roles, departments, sections } = useSelector((state) => state.config);
@@ -102,6 +128,19 @@ const UsersPage = () => {
         setEdit(false);
         setView(false);
     };
+    const openNotification = (msg) => {
+        dispatch(
+            openSnackbar({
+                open: true,
+                message: msg,
+                variant: 'alert',
+                alert: {
+                    color: 'success'
+                },
+                close: false
+            })
+        );
+    };
 
     useEffect(() => {
         dispatch(actions.config.getDepartments());
@@ -112,6 +151,7 @@ const UsersPage = () => {
 
     useEffect(() => {
         if (isSaved) {
+            openNotification('Registration Successfull. Password is sent on email');
             setInitialState();
             getUserData();
         }
@@ -161,7 +201,7 @@ const UsersPage = () => {
         dispatch(actions.user.saveUsers(data));
     };
 
-    const handleEdit = (row, index) => {
+    const handleEdit = (row) => {
         setUser({
             ...initialUserState,
             ...row,
@@ -172,7 +212,7 @@ const UsersPage = () => {
         setEdit(true);
     };
 
-    const handleView = (row, index) => {
+    const handleView = (row) => {
         setUser({
             ...initialUserState,
             ...row,
@@ -195,7 +235,7 @@ const UsersPage = () => {
     const handleAction = (actionId, r, i) => {
         switch (actionId) {
             case 1:
-                handleEdit(r, i);
+                handleEdit(r);
                 break;
             case 2:
                 handleDelete(r, i);
@@ -204,7 +244,7 @@ const UsersPage = () => {
                 handlePageChange(r);
                 break;
             case 4:
-                handleView(r, i);
+                handleView(r);
                 break;
             default:
                 break;
@@ -223,6 +263,20 @@ const UsersPage = () => {
     };
 
     const canDialogOpen = () => !!(isNew || isEdit || isView);
+
+    const checkValidation = () => {
+        const validRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
+        if (!user.email.match(validRegex)) {
+            setFormError({
+                ...formError,
+                email: 'Please enter valid email'
+            });
+        } else {
+            setFormError({
+                ...intitalFormError
+            });
+        }
+    };
 
     const userForm = () => (
         <Dialog open={canDialogOpen()} TransitionComponent={Transition} keepMounted onClose={handleCloseDialog} sx={composePosition}>
@@ -268,9 +322,13 @@ const UsersPage = () => {
                                 name="email"
                                 fullWidth
                                 label="Email"
+                                type="email"
                                 value={user.email}
+                                onBlur={checkValidation}
                                 onChange={handleFormChange}
                                 disabled={isView}
+                                error={formError?.email}
+                                helperText={formError?.email}
                             />
                         </Grid>
                         <Grid item xs={12}>

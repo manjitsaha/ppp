@@ -18,6 +18,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import { gridSpacing } from 'store/constant';
 import { useDispatch, useSelector } from 'store';
 import actions from 'store/actions';
+import { openSnackbar } from 'store/slices/snackbar';
 // import { saveUsers } from 'store/slices/user';
 
 // assets
@@ -29,7 +30,7 @@ import TableComponent from 'components/grid';
 const Transition = React.forwardRef((props, ref) => <Slide direction="up" ref={ref} {...props} />);
 const initialSubCategoryState = {
     name: '',
-    color: '',
+    color: null,
     category_id: null
 };
 
@@ -44,7 +45,10 @@ const columns = [
     },
     {
         name: 'Color',
-        field: 'color'
+        field: 'color',
+        renderer(params) {
+            return <div style={{ backgroundColor: `${params.color}`, width: '50%', height: '40px', borderRadius: '5px' }} />;
+        }
     },
     {
         name: 'Category',
@@ -72,6 +76,7 @@ const SubCategoryPage = () => {
     const [deleteItemId, setDeleteItemId] = useState(null);
     const { list, isSaved, loading, error, isDeleted } = useSelector((state) => state.config.subcategories);
     const categoryData = useSelector((state) => state.config.categories);
+    const colorData = useSelector((state) => state.config.color.list);
 
     const getSubCategoryData = () => {
         dispatch(actions.config.getsubcategory());
@@ -79,6 +84,20 @@ const SubCategoryPage = () => {
 
     const getCategoryData = () => {
         dispatch(actions.config.getcategory());
+    };
+
+    const openNotification = (msg) => {
+        dispatch(
+            openSnackbar({
+                open: true,
+                message: msg,
+                variant: 'alert',
+                alert: {
+                    color: 'success'
+                },
+                close: false
+            })
+        );
     };
 
     const setInitialState = () => {
@@ -93,19 +112,24 @@ const SubCategoryPage = () => {
     useEffect(() => {
         getSubCategoryData();
         getCategoryData();
+        dispatch(actions.config.getColors());
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         if (isSaved) {
+            openNotification(isNew ? 'Sub Category created successfully.' : 'Sub Category updated successfully.');
             setInitialState();
             getSubCategoryData();
         }
     }, [isSaved, subcategory]);
 
     useEffect(() => {
-        setDeleteItemId(null);
-        setDeleteModal(false);
-        getSubCategoryData();
+        if (isDeleted) {
+            openNotification('Record Deleted!!!');
+            setDeleteItemId(null);
+            setDeleteModal(false);
+            getSubCategoryData();
+        }
     }, [isDeleted]);
 
     useEffect(() => {
@@ -151,7 +175,8 @@ const SubCategoryPage = () => {
     const handleCreate = () => {
         console.log('subcategory', subcategory);
         const subCategoryData = {
-            ...subcategory
+            ...subcategory,
+            color: subcategory.color.code
         };
         if (Object.keys(subCategoryData).includes('category')) {
             subCategoryData.category_id = subcategory.category.id;
@@ -163,7 +188,8 @@ const SubCategoryPage = () => {
         console.log(row, index);
         setSubCategory({
             ...initialSubCategoryState,
-            ...row
+            ...row,
+            color: colorData.find((x) => x.code === row.color || x.color === row.color)
         });
         setEdit(true);
     };
@@ -211,10 +237,26 @@ const SubCategoryPage = () => {
                             </Grid>
                         </Grid>
                         <Grid item xs={12}>
-                            <TextField fullWidth name="name" label="Name" value={subcategory.name} onChange={handleFormChange} />
+                            <TextField
+                                fullWidth
+                                name="name"
+                                label="Name"
+                                value={subcategory.name}
+                                onChange={handleFormChange}
+                                // required
+                                // error={Boolean(subcategory.name)}
+                            />
                         </Grid>
                         <Grid item xs={12}>
-                            <TextField name="color" fullWidth label="Color" value={subcategory.color} onChange={handleFormChange} />
+                            <Autocomplete
+                                options={colorData}
+                                getOptionLabel={(opt) => `${opt.color}(${opt.code})`}
+                                value={subcategory.color}
+                                onChange={(event, value) => handleAutocompleteChange('color', value)}
+                                renderInput={(params) => (
+                                    <TextField {...params} /* required error={Boolean(subcategory.color)} */ label="Color" />
+                                )}
+                            />
                         </Grid>
                         <Grid item xs={12}>
                             <Autocomplete
@@ -222,7 +264,9 @@ const SubCategoryPage = () => {
                                 getOptionLabel={(category) => category.name}
                                 defaultValue={setSelection(subcategory.category_id)}
                                 onChange={(event, value) => handleAutocompleteChange('category', value)}
-                                renderInput={(params) => <TextField {...params} label="Category" />}
+                                renderInput={(params) => (
+                                    <TextField {...params} /* required error={Boolean(subcategory.category_id)} */ label="Category" />
+                                )}
                             />
                         </Grid>
                         <Grid item xs={12}>

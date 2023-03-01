@@ -201,7 +201,8 @@ const accountReducer = (state = initialState, action) => {
         case USER_PROFILE_REQUEST: {
             return {
                 ...state,
-                user: null
+                isLoggedIn: true,
+                isInitialized: true
             };
         }
 

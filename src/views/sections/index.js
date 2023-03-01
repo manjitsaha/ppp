@@ -18,6 +18,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import { gridSpacing } from 'store/constant';
 import { useDispatch, useSelector } from 'store';
 import actions from 'store/actions';
+import { openSnackbar } from 'store/slices/snackbar';
 // import { saveUsers } from 'store/slices/user';
 
 // assets
@@ -97,6 +98,20 @@ const SectionPage = () => {
         dispatch(actions.config.getSections());
     };
 
+    const openNotification = (msg) => {
+        dispatch(
+            openSnackbar({
+                open: true,
+                message: msg,
+                variant: 'alert',
+                alert: {
+                    color: 'success'
+                },
+                close: false
+            })
+        );
+    };
+
     const getCorridorsData = () => {
         dispatch(actions.config.getcorridors());
     };
@@ -116,15 +131,19 @@ const SectionPage = () => {
 
     useEffect(() => {
         if (isSaved) {
+            openNotification(isNew ? 'New section record created successfully.' : 'Section record updated successfully.');
             setInitialState();
             getSectionData();
         }
     }, [isSaved, section]);
 
     useEffect(() => {
-        setDeleteItemId(null);
-        setDeleteModal(false);
-        getSectionData();
+        if (isDeleted) {
+            openNotification('Record Deleted!!!');
+            setDeleteItemId(null);
+            setDeleteModal(false);
+            getSectionData();
+        }
     }, [isDeleted]);
 
     useEffect(() => {

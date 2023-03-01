@@ -9,7 +9,8 @@ import {
     TextField,
     Typography,
     IconButton,
-    Slide
+    Slide,
+    Autocomplete
 } from '@mui/material';
 
 // project imports
@@ -17,6 +18,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import { gridSpacing } from 'store/constant';
 import { useDispatch, useSelector } from 'store';
 import actions from 'store/actions';
+import { openSnackbar } from 'store/slices/snackbar';
 // import { saveUsers } from 'store/slices/user';
 
 // assets
@@ -28,7 +30,7 @@ import TableComponent from 'components/grid';
 const Transition = React.forwardRef((props, ref) => <Slide direction="up" ref={ref} {...props} />);
 const initialPriorityState = {
     name: '',
-    color: ''
+    color: null
 };
 
 const columns = [
@@ -42,7 +44,10 @@ const columns = [
     },
     {
         name: 'Color',
-        field: 'color'
+        field: 'color',
+        renderer(params) {
+            return <div style={{ backgroundColor: `${params.color}`, width: '50%', height: '40px', borderRadius: '5px' }} />;
+        }
     },
     {
         name: 'Action',
@@ -64,9 +69,23 @@ const PriorityPage = () => {
     const [position, setPosition] = useState(true);
     const [isDeleteModal, setDeleteModal] = useState(false);
     const { list, isSaved, error, loading, isDeleted } = useSelector((state) => state.config.priorities);
+    const colorData = useSelector((state) => state.config.color.list);
 
     const getPriorityData = () => {
         dispatch(actions.config.getPriority());
+    };
+    const openNotification = (msg) => {
+        dispatch(
+            openSnackbar({
+                open: true,
+                message: msg,
+                variant: 'alert',
+                alert: {
+                    color: 'success'
+                },
+                close: false
+            })
+        );
     };
 
     const setInitialState = () => {
@@ -79,19 +98,24 @@ const PriorityPage = () => {
 
     useEffect(() => {
         getPriorityData();
+        dispatch(actions.config.getColors());
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         if (isSaved) {
+            openNotification(isNew ? 'New priority record created successfully.' : 'Priority record updated successfully.');
             setInitialState();
             getPriorityData();
         }
     }, [isSaved, priority]);
 
     useEffect(() => {
-        setDeleteItemId(null);
-        setDeleteModal(false);
-        getPriorityData();
+        if (isDeleted) {
+            openNotification('Record Deleted!!!');
+            setDeleteItemId(null);
+            setDeleteModal(false);
+            getPriorityData();
+        }
     }, [isDeleted]);
 
     const handleClickOpen = () => {
@@ -122,15 +146,20 @@ const PriorityPage = () => {
     };
 
     const handleCreate = () => {
-        console.log('user', priority);
-        dispatch(actions.config.savePriority(priority, isEdit));
+        const priorityObj = {
+            ...priority,
+            color: priority.color.code
+        };
+        console.log('user', priorityObj);
+        dispatch(actions.config.savePriority(priorityObj, isEdit));
     };
 
     const handleEdit = (row, index) => {
         console.log(row, index);
         setPriority({
             ...initialPriorityState,
-            ...row
+            ...row,
+            color: colorData.find((x) => x.code === row.color || x.color === row.color)
         });
         setEdit(true);
     };
@@ -152,6 +181,14 @@ const PriorityPage = () => {
             default:
                 break;
         }
+    };
+
+    const handleAutocompleteChange = (key, value) => {
+        const priorityObj = {
+            ...priority,
+            [key]: value
+        };
+        setPriority(priorityObj);
     };
 
     const canDialogOpen = () => !!(isNew || isEdit);
@@ -179,7 +216,13 @@ const PriorityPage = () => {
                             <TextField fullWidth name="name" label="Name" value={priority.name} onChange={handleFormChange} />
                         </Grid>
                         <Grid item xs={12}>
-                            <TextField name="color" fullWidth label="Color" value={priority.color} onChange={handleFormChange} />
+                            <Autocomplete
+                                options={colorData}
+                                getOptionLabel={(opt) => `${opt.color}(${opt.code})`}
+                                value={priority.color}
+                                onChange={(event, value) => handleAutocompleteChange('color', value)}
+                                renderInput={(params) => <TextField {...params} label="Color" />}
+                            />
                         </Grid>
                         <Grid item xs={12}>
                             <Grid container spacing={1} alignItems="center">

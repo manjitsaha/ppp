@@ -11,13 +11,11 @@ import actions from 'store/actions';
  * @param {PropTypes.node} children children element/node
  */
 const AuthGuard = ({ children }) => {
-    debugger;
     const navigate = useNavigate();
     const auth = useSelector((state) => state.auth);
     const token = localStorage.getItem('token');
 
     useEffect(() => {
-        debugger;
         if (!auth.isLoggedIn && !token) {
             navigate('login', { replace: true });
         }

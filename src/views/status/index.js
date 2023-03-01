@@ -9,7 +9,8 @@ import {
     TextField,
     Typography,
     IconButton,
-    Slide
+    Slide,
+    Autocomplete
 } from '@mui/material';
 
 // project imports
@@ -17,6 +18,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import { gridSpacing } from 'store/constant';
 import { useDispatch, useSelector } from 'store';
 import actions from 'store/actions';
+import { openSnackbar } from 'store/slices/snackbar';
 // import { saveUsers } from 'store/slices/user';
 
 // assets
@@ -28,7 +30,7 @@ import TableComponent from 'components/grid';
 const Transition = React.forwardRef((props, ref) => <Slide direction="up" ref={ref} {...props} />);
 const initialStatusState = {
     name: '',
-    color: ''
+    color: null
 };
 
 const columns = [
@@ -42,7 +44,10 @@ const columns = [
     },
     {
         name: 'Color',
-        field: 'color'
+        field: 'color',
+        renderer(params) {
+            return <div style={{ backgroundColor: `${params.color}`, width: '50%', height: '40px', borderRadius: '5px' }} />;
+        }
     },
     {
         name: 'Action',
@@ -64,6 +69,21 @@ const StatusPage = () => {
     const [position, setPosition] = useState(true);
     const [isDeleteModal, setDeleteModal] = useState(false);
     const { isSaved, list, error, isDeleted } = useSelector((state) => state.config.status);
+    const colorData = useSelector((state) => state.config.color.list);
+
+    const openNotification = (msg) => {
+        dispatch(
+            openSnackbar({
+                open: true,
+                message: msg,
+                variant: 'alert',
+                alert: {
+                    color: 'success'
+                },
+                close: false
+            })
+        );
+    };
 
     const getStatusData = () => {
         dispatch(actions.config.getStatus());
@@ -79,19 +99,24 @@ const StatusPage = () => {
 
     useEffect(() => {
         getStatusData();
+        dispatch(actions.config.getColors());
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         if (isSaved) {
+            openNotification(isNew ? 'Status created successfully.' : 'Status updated successfully.');
             setInitialState();
             getStatusData();
         }
     }, [isSaved, status]);
 
     useEffect(() => {
-        setDeleteItemId(null);
-        setDeleteModal(false);
-        getStatusData();
+        if (isDeleted) {
+            openNotification('Record Deleted!!!');
+            setDeleteItemId(null);
+            setDeleteModal(false);
+            getStatusData();
+        }
     }, [isDeleted]);
 
     const handleClickOpen = () => {
@@ -122,15 +147,20 @@ const StatusPage = () => {
     };
 
     const handleCreate = () => {
-        console.log('user', status);
-        dispatch(actions.config.saveStatus(status, isEdit));
+        const statusObj = {
+            ...status,
+            color: status.color.code
+        };
+        console.log('user', statusObj);
+        dispatch(actions.config.saveStatus(statusObj, isEdit));
     };
 
     const handleEdit = (row, index) => {
         console.log(row, index);
         setStatus({
             ...initialStatusState,
-            ...row
+            ...row,
+            color: colorData.find((x) => x.code === row.color || x.color === row.color)
         });
         setEdit(true);
     };
@@ -152,6 +182,14 @@ const StatusPage = () => {
             default:
                 break;
         }
+    };
+
+    const handleAutocompleteChange = (key, value) => {
+        const statusObj = {
+            ...status,
+            [key]: value
+        };
+        setStatus(statusObj);
     };
 
     const canDialogOpen = () => !!(isNew || isEdit);
@@ -179,7 +217,13 @@ const StatusPage = () => {
                             <TextField fullWidth name="name" label="Name" value={status.name} onChange={handleFormChange} />
                         </Grid>
                         <Grid item xs={12}>
-                            <TextField name="color" fullWidth label="Color" value={status.color} onChange={handleFormChange} />
+                            <Autocomplete
+                                options={colorData}
+                                getOptionLabel={(opt) => `${opt.color}(${opt.code})`}
+                                value={status.color}
+                                onChange={(event, value) => handleAutocompleteChange('color', value)}
+                                renderInput={(params) => <TextField {...params} label="Color" />}
+                            />
                         </Grid>
                         <Grid item xs={12}>
                             <Grid container spacing={1} alignItems="center">

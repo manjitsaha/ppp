@@ -179,7 +179,7 @@ export const userProfile = () => async () => {
     try {
         const res = await axios.get('/user-profile');
         console.log('res', res);
-        if (res.data.success === 'Success') {
+        if (res.data.status === 'Success') {
             dispatch(userProfileSuccess(res.data.data));
         }
     } catch (err) {

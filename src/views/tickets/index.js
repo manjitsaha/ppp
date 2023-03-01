@@ -7,6 +7,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import { gridSpacing } from 'store/constant';
 import { useDispatch, useSelector } from 'store';
 import actions from 'store/actions';
+import { openSnackbar } from 'store/slices/snackbar';
 
 // assets
 import { IconSearch } from '@tabler/icons';
@@ -81,17 +82,43 @@ const TicketPage = () => {
     console.log('type', type);
     const dispatch = useDispatch();
     const [position, setPosition] = useState(true);
+    const [deleteItem, setDeleteItem] = useState(null);
     const [isDeleteModal, setDeleteModal] = useState(false);
-    const { tickets, ticket, error, isSaved, isDeleted, pagination } = useSelector((state) => state.ticket);
+    const { tickets, pagination, isDeleted } = useSelector((state) => state.ticket);
     const { user } = useSelector((state) => state.auth);
 
     const getTicketData = (type, userId, page) => {
         dispatch(actions.ticket.getTickets({ type, uid: userId, page }));
     };
 
+    const openNotification = (msg) => {
+        dispatch(
+            openSnackbar({
+                open: true,
+                message: msg,
+                variant: 'alert',
+                alert: {
+                    color: 'success'
+                },
+                close: false
+            })
+        );
+    };
+
     useEffect(() => {
-        getTicketData(type, user.id);
+        if (user?.id) {
+            getTicketData(type, user.id);
+        }
     }, [type, user]);
+
+    useEffect(() => {
+        if (isDeleted) {
+            openNotification('Record Deleted!!!');
+            setDeleteItem(null);
+            setDeleteModal(false);
+            getTicketData(type, user.id);
+        }
+    }, [isDeleted]);
 
     if (!position) {
         composePosition = {
@@ -109,6 +136,7 @@ const TicketPage = () => {
 
     const handleDelete = (row, index) => {
         console.log(row, index);
+        setDeleteItem(row);
         setDeleteModal(true);
     };
 
@@ -144,6 +172,10 @@ const TicketPage = () => {
         setDeleteModal(false);
     };
 
+    const confirmDelete = () => {
+        dispatch(actions.ticket.deleteTicket(deleteItem.ticket_no));
+    };
+
     const confirmationDialog = () => (
         <Dialog open={isDeleteModal} TransitionComponent={Transition} keepMounted onClose={closeDeleteModal} sx={composePosition}>
             <DialogContent>
@@ -165,7 +197,7 @@ const TicketPage = () => {
                     <Grid item xs={12}>
                         <Grid container spacing={1} alignItems="center">
                             <Grid item>
-                                <Button variant="contained" color="success" onClick={closeDeleteModal}>
+                                <Button variant="contained" color="success" onClick={confirmDelete}>
                                     Yes
                                 </Button>
                             </Grid>

@@ -17,7 +17,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import { gridSpacing } from 'store/constant';
 import { useDispatch, useSelector } from 'store';
 import actions from 'store/actions';
-// import { saveUsers } from 'store/slices/user';
+import { openSnackbar } from 'store/slices/snackbar';
 
 // assets
 import { IconSearch } from '@tabler/icons';
@@ -79,6 +79,20 @@ const CorridorPage = () => {
         dispatch(actions.config.getcorridors());
     };
 
+    const openNotification = (msg) => {
+        dispatch(
+            openSnackbar({
+                open: true,
+                message: msg,
+                variant: 'alert',
+                alert: {
+                    color: 'success'
+                },
+                close: false
+            })
+        );
+    };
+
     const setInitialState = () => {
         setCorridor({
             ...initialCorridorState
@@ -93,15 +107,19 @@ const CorridorPage = () => {
 
     useEffect(() => {
         if (isSaved) {
+            openNotification(isNew ? 'New corridor record created successfully.' : 'Corridor record updated successfully.');
             setInitialState();
             getCorridorsData();
         }
     }, [isSaved, corridor]);
 
     useEffect(() => {
-        setDeleteItemId(null);
-        setDeleteModal(false);
-        getCorridorsData();
+        if (isDeleted) {
+            openNotification('Record Deleted!!!');
+            setDeleteItemId(null);
+            setDeleteModal(false);
+            getCorridorsData();
+        }
     }, [isDeleted]);
 
     const handleClickOpen = () => {

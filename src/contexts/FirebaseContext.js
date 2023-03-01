@@ -31,7 +31,6 @@ const FirebaseContext = createContext(null);
 
 export const FirebaseProvider = ({ children }) => {
     const [state, dispatch] = useReducer(accountReducer, initialState);
-    console.log(state);
 
     useEffect(
         () =>
@@ -57,6 +56,8 @@ export const FirebaseProvider = ({ children }) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [dispatch]
     );
+
+    useEffect(() => {}, []);
 
     const firebaseEmailPasswordSignIn = (email, password) => firebase.auth().signInWithEmailAndPassword(email, password);
 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { useNavigate, Outlet } from 'react-router-dom';
 
 // material-ui
 import { styled, useTheme } from '@mui/material/styles';
@@ -78,14 +78,23 @@ const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })(({
 
 const MainLayout = () => {
     const theme = useTheme();
+    const navigate = useNavigate();
 
     const matchDownMd = useMediaQuery(theme.breakpoints.down('md'));
 
     const dispatch = useDispatch();
     const { drawerOpen } = useSelector((state) => state.menu);
+    const auth = useSelector((state) => state.auth);
     const { drawerType, container, layout } = useConfig();
 
     const [open, setOpen] = useState(drawerType === LAYOUT_CONST.DEFAULT_DRAWER && drawerOpen);
+
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            navigate('/login');
+        }
+    }, [auth]);
 
     useEffect(() => {
         if (drawerType === LAYOUT_CONST.DEFAULT_DRAWER) {

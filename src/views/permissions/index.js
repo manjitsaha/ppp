@@ -17,6 +17,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import { gridSpacing } from 'store/constant';
 import { useDispatch, useSelector } from 'store';
 import actions from 'store/actions';
+import { openSnackbar } from 'store/slices/snackbar';
 
 // assets
 import { IconSearch } from '@tabler/icons';
@@ -63,6 +64,20 @@ const PermissionPage = () => {
     const getPermissionsData = () => {
         dispatch(actions.config.getPermissions());
     };
+
+    const openNotification = (msg) => {
+        dispatch(
+            openSnackbar({
+                open: true,
+                message: msg,
+                variant: 'alert',
+                alert: {
+                    color: 'success'
+                },
+                close: false
+            })
+        );
+    };
     const setInitialState = () => {
         setPermission({
             ...initialPermissionState
@@ -77,15 +92,19 @@ const PermissionPage = () => {
 
     useEffect(() => {
         if (isSaved) {
+            openNotification(isNew ? 'New Permission record created successfully.' : 'Permission record updated successfully.');
             setInitialState();
             getPermissionsData();
         }
     }, [isSaved, permission]);
 
     useEffect(() => {
-        setDeleteItemId(null);
-        setDeleteModal(false);
-        getPermissionsData();
+        if (isDeleted) {
+            openNotification('Record Deleted!!!');
+            setDeleteItemId(null);
+            setDeleteModal(false);
+            getPermissionsData();
+        }
     }, [isDeleted]);
 
     const handleClickOpen = () => {

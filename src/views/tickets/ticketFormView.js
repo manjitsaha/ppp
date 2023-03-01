@@ -26,11 +26,25 @@ const initialTicketState = {
     files: []
 };
 
+const intitalFormError = {
+    title: '',
+    description: '',
+    note: '',
+    status: null,
+    priority: null,
+    category: null,
+    sub_category: null,
+    department: null,
+    section: null,
+    files: []
+};
+
 const CreateTicketPage = () => {
     let composePosition = {};
     const theme = useTheme();
     const dispatch = useDispatch();
     const [ticketdata, setTicketData] = useState({ ...initialTicketState });
+    const [formError, setFormError] = useState({ ...intitalFormError });
     const [position, setPosition] = useState(true);
     const { departments, sections, categories, subcategories, status, priorities } = useSelector((state) => state.config);
     const { isSaved } = useSelector((state) => state.ticket);
@@ -40,7 +54,6 @@ const CreateTicketPage = () => {
         dispatch(actions.config.getDepartments());
         dispatch(actions.config.getSections());
         dispatch(actions.config.getcategory());
-        dispatch(actions.config.getsubcategory());
         dispatch(actions.config.getStatus());
         dispatch(actions.config.getPriority());
     };
@@ -91,6 +104,9 @@ const CreateTicketPage = () => {
             [name]: value
         };
         setTicketData(ticket);
+        if (name === 'category') {
+            dispatch(actions.config.getsubcategory({ type: 'category-based', cat_id: value.id }));
+        }
     };
 
     const handleCreate = () => {
@@ -130,11 +146,44 @@ const CreateTicketPage = () => {
         });
     };
 
+    const checkValidation = (key) => {
+        if (!ticketdata[key]) {
+            setFormError({
+                ...formError,
+                [key]: `Please enter ${key}`
+            });
+        } else {
+            setFormError({
+                ...intitalFormError
+            });
+        }
+    };
+
+    const formValid = () => {
+        let isFormValid = true;
+        Object.keys(ticketdata).forEach((x) => {
+            if (!['note', 'files'].includes(x) && !ticketdata[x]) {
+                isFormValid = false;
+            }
+        });
+        return isFormValid;
+    };
+
     const ticketForm = () => (
         <Grid item xs={12} sx={{ p: 3 }}>
             <Grid container spacing={gridSpacing}>
                 <Grid item xs={12}>
-                    <TextField name="title" fullWidth label="Title" value={ticketdata.title} onChange={handleFormChange} />
+                    <TextField
+                        name="title"
+                        fullWidth
+                        label="Title"
+                        required
+                        value={ticketdata.title}
+                        onChange={handleFormChange}
+                        onBlur={() => checkValidation('title')}
+                        error={Boolean(formError.title)}
+                        helperText={formError?.title}
+                    />
                 </Grid>
                 <Grid
                     item
@@ -164,11 +213,14 @@ const CreateTicketPage = () => {
                     }}
                 >
                     <Stack spacing={gridSpacing}>
-                        <Typography variant="subtitle1">Description</Typography>
+                        <Typography variant="subtitle1">Description*</Typography>
                         <ReactQuill
                             theme="snow"
                             value={ticketdata.description}
                             onChange={(value) => handleAutocompleteChange('description', value)}
+                            onBlur={() => checkValidation('description')}
+                            error={formError?.description}
+                            helperText={formError?.description}
                         />
                     </Stack>
                 </Grid>
@@ -210,7 +262,16 @@ const CreateTicketPage = () => {
                         getOptionLabel={(option) => option.name}
                         value={ticketdata.status}
                         onChange={(event, value) => handleAutocompleteChange('status', value)}
-                        renderInput={(params) => <TextField {...params} label="Status" />}
+                        onBlur={() => checkValidation('status')}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                required
+                                error={Boolean(formError.status)}
+                                helperText={formError?.status}
+                                label="Status"
+                            />
+                        )}
                     />
                 </Grid>
                 <Grid item xs={12}>
@@ -219,7 +280,16 @@ const CreateTicketPage = () => {
                         getOptionLabel={(priority) => priority.name}
                         value={ticketdata.priority}
                         onChange={(event, value) => handleAutocompleteChange('priority', value)}
-                        renderInput={(params) => <TextField {...params} label="Priority" />}
+                        onBlur={() => checkValidation('priority')}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                error={Boolean(formError.priority)}
+                                helperText={formError?.priority}
+                                required
+                                label="Priority"
+                            />
+                        )}
                     />
                 </Grid>
                 <Grid item xs={12}>
@@ -228,7 +298,16 @@ const CreateTicketPage = () => {
                         getOptionLabel={(category) => category.name}
                         value={ticketdata.category}
                         onChange={(event, value) => handleAutocompleteChange('category', value)}
-                        renderInput={(params) => <TextField {...params} label="Category" />}
+                        onBlur={() => checkValidation('category')}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                error={Boolean(formError.category)}
+                                helperText={formError?.category}
+                                required
+                                label="Category"
+                            />
+                        )}
                     />
                 </Grid>
                 <Grid item xs={12}>
@@ -237,7 +316,17 @@ const CreateTicketPage = () => {
                         getOptionLabel={(subcat) => subcat.name}
                         value={ticketdata.sub_category}
                         onChange={(event, value) => handleAutocompleteChange('sub_category', value)}
-                        renderInput={(params) => <TextField {...params} label="Sub Category" />}
+                        onBlur={() => checkValidation('sub_category')}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                error={Boolean(formError.sub_category)}
+                                helperText={formError?.sub_category}
+                                required
+                                label="Sub Category"
+                            />
+                        )}
+                        disabled={!(subcategories.list.length > 0)}
                     />
                 </Grid>
                 <Grid item xs={12}>
@@ -246,7 +335,16 @@ const CreateTicketPage = () => {
                         getOptionLabel={(department) => department.department_name}
                         value={ticketdata.department}
                         onChange={(event, value) => handleAutocompleteChange('department', value)}
-                        renderInput={(params) => <TextField {...params} label="Department" />}
+                        onBlur={() => checkValidation('department')}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                error={Boolean(formError.department)}
+                                helperText={formError?.department}
+                                required
+                                label="Department"
+                            />
+                        )}
                     />
                 </Grid>
                 <Grid item xs={12}>
@@ -255,7 +353,16 @@ const CreateTicketPage = () => {
                         getOptionLabel={(section) => section.section_name}
                         value={ticketdata.section}
                         onChange={(event, value) => handleAutocompleteChange('section', value)}
-                        renderInput={(params) => <TextField {...params} label="Section" />}
+                        onBlur={() => checkValidation('section')}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                error={Boolean(formError.section)}
+                                helperText={formError?.section}
+                                required
+                                label="Section"
+                            />
+                        )}
                     />
                 </Grid>
                 <Grid item>
@@ -274,7 +381,7 @@ const CreateTicketPage = () => {
                             </Button>
                         </Grid>
                         <Grid item>
-                            <Button variant="contained" color="secondary" onClick={() => handleCreate()}>
+                            <Button variant="contained" color="secondary" onClick={() => handleCreate()} disabled={!formValid()}>
                                 Create
                             </Button>
                         </Grid>

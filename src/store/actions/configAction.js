@@ -82,7 +82,10 @@ import {
     SAVE_ROlE_FAILED,
     DELETE_ROlE_REQUEST,
     DELETE_ROlE_SUCCESS,
-    DELETE_ROlE_FAILED
+    DELETE_ROlE_FAILED,
+    COLOR_REQUEST,
+    COLOR_SUCCESS,
+    COLOR_FAILED
 } from '../actionsType';
 
 const roleRequest = () => ({
@@ -412,10 +415,14 @@ const subCategoryFailed = () => ({
     type: SUB_CATEGORY_FAILED
 });
 
-export const getsubcategory = () => async () => {
+export const getsubcategory = (arg) => async () => {
     try {
         dispatch(subCategoryRequest());
-        const response = await axios.get('all-sub-category');
+        let url = 'all-sub-category';
+        if (arg?.type) {
+            url = `get-sub-category-by-catid/${arg.cat_id}`;
+        }
+        const response = await axios.get(url);
         if (response.data.status === 'Success') dispatch(subCategorySuccess(response.data.data));
     } catch (error) {
         dispatch(subCategoryFailed(error));
@@ -733,5 +740,29 @@ export const deletePermission = (statId) => async () => {
         if (response.data.status === 'Success') dispatch(deletePermissionSuccess());
     } catch (error) {
         dispatch(deletePermissionFailed());
+    }
+};
+
+const colorsRequest = () => ({
+    type: COLOR_REQUEST
+});
+
+const colorsSuccess = (data) => ({
+    type: COLOR_SUCCESS,
+    payload: data
+});
+
+const colorsFailed = (err) => ({
+    type: COLOR_FAILED,
+    payload: err
+});
+
+export const getColors = () => async () => {
+    try {
+        dispatch(colorsRequest());
+        const response = await axios.get('all-color');
+        if (response.data.status === 'Success') dispatch(colorsSuccess(response.data.data));
+    } catch (error) {
+        dispatch(colorsFailed(error));
     }
 };

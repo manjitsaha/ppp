@@ -75,7 +75,10 @@ import {
     PERMISSION_FAILED,
     DELETE_PERMISSION_REQUEST,
     DELETE_PERMISSION_SUCCESS,
-    DELETE_PERMISSION_FAILED
+    DELETE_PERMISSION_FAILED,
+    COLOR_REQUEST,
+    COLOR_SUCCESS,
+    COLOR_FAILED
 } from '../actionsType';
 
 // ==============================|| CONFIG REDUCER ||============================== //
@@ -143,12 +146,18 @@ const initialState = {
         isSaved: false,
         isDeleted: false
     },
+    color: {
+        list: [],
+        error: null,
+        loading: false,
+        isSaved: false,
+        isDeleted: false
+    },
     error: null
 };
 
 // eslint-disable-next-line
 const configReducer = (state = initialState, action) => {
-    debugger;
     switch (action.type) {
         case ROlE_REQUEST: {
             return {
@@ -961,6 +970,38 @@ const configReducer = (state = initialState, action) => {
                     ...initialState.status,
                     loading: false,
                     isDeleted: false,
+                    error: action.payload
+                }
+            };
+        }
+
+        case COLOR_REQUEST: {
+            return {
+                ...state,
+                color: {
+                    ...initialState.color,
+                    loading: true
+                }
+            };
+        }
+
+        case COLOR_SUCCESS: {
+            return {
+                ...state,
+                color: {
+                    ...initialState.color,
+                    loading: false,
+                    list: action.payload
+                }
+            };
+        }
+
+        case COLOR_FAILED: {
+            return {
+                ...state,
+                color: {
+                    ...initialState.color,
+                    loading: false,
                     error: action.payload
                 }
             };

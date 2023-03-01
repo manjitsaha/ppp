@@ -64,7 +64,6 @@ const createTicketFailed = () => ({
 
 export const saveTickets = (data) => async () => {
     try {
-        debugger;
         const formData = new FormData();
         formData.append('title', data.title);
         formData.append('description', data.description);
@@ -130,14 +129,10 @@ const deleteTicketFailed = () => ({
     type: DELETE_TICKET_FAILED
 });
 
-export const deleteTicket = (ticket_no, userid) => async () => {
+export const deleteTicket = (ticket_no) => async () => {
     try {
-        const data = {
-            ticket_no,
-            user_id: userid
-        };
         dispatch(deleteTicketRequest());
-        const response = await axios.delete(`/delete-ticket/${ticket_no}`, JSON.stringify(data));
+        const response = await axios.delete(`/delete-ticket/${ticket_no}`);
         dispatch(deleteTicketSuccess());
     } catch (error) {
         dispatch(deleteTicketFailed(error));
